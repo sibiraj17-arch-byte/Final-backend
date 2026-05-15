@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.reporting.mapper.ReportingQueryMapper">
+
+    <resultMap id="appointmentReportItemMap" type="com.healthcare.feature.reporting.dto.AppointmentReportItemDTO">
+        <id property="appointmentId" column="appointmentId"/>
+        <result property="appointmentCode" column="appointmentCode"/>
+        <result property="patientId" column="patientId"/>
+        <result property="patientName" column="patientName"/>
+        <result property="doctorId" column="doctorId"/>
+        <result property="doctorName" column="doctorName"/>
+        <result property="specialization" column="specialization"/>
+        <result property="appointmentDate" column="appointmentDate"/>
+        <result property="startTime" column="startTime"/>
+        <result property="endTime" column="endTime"/>
+        <result property="status" column="status"/>
+        <result property="consultationFee" column="consultationFee"/>
+    </resultMap>
+
+    <resultMap id="revenueReportItemMap" type="com.healthcare.feature.reporting.dto.RevenueReportItemDTO">
+        <id property="paymentId" column="paymentId"/>
+        <result property="appointmentId" column="appointmentId"/>
+        <result property="appointmentCode" column="appointmentCode"/>
+        <result property="patientId" column="patientId"/>
+        <result property="patientName" column="patientName"/>
+        <result property="doctorId" column="doctorId"/>
+        <result property="doctorName" column="doctorName"/>
+        <result property="amount" column="amount"/>
+        <result property="paymentStatus" column="paymentStatus"/>
+        <result property="paymentMethod" column="paymentMethod"/>
+        <result property="createdAt" column="createdAt"/>
+    </resultMap>
+
+    <resultMap id="revenueByPatientMap" type="com.healthcare.feature.reporting.dto.RevenueByPatientDTO">
+        <id property="patientId" column="patientId"/>
+        <result property="patientName" column="patientName"/>
+        <result property="totalRevenue" column="totalRevenue"/>
+        <result property="paymentCount" column="paymentCount"/>
+        <result property="averageRevenue" column="averageRevenue"/>
+    </resultMap>
+
+    <resultMap id="revenueByDoctorMap" type="com.healthcare.feature.reporting.dto.RevenueByDoctorDTO">
+        <id property="doctorId" column="doctorId"/>
+        <result property="doctorName" column="doctorName"/>
+        <result property="totalRevenue" column="totalRevenue"/>
+        <result property="paymentCount" column="paymentCount"/>
+        <result property="averageRevenue" column="averageRevenue"/>
+    </resultMap>
+
+    <sql id="reportingRoleScope">
+        <if test="role == 'DOCTOR'">
+            AND ${doctorColumn} = #{doctorId}
+        </if>
+        <if test="role == 'PATIENT'">
+            AND ${patientColumn} = #{patientId}
+        </if>
+    </sql>
+
+    <select id="findAppointmentsForReport" resultMap="appointmentReportItemMap">
+        SELECT
+            a.id AS appointmentId,
+            a.code AS appointmentCode,
+            p.id AS patientId,
+            pu.name AS patientName,
+            d.id AS doctorId,
+            du.name AS doctorName,
+            s.name AS specialization,
+            a.appointment_date AS appointmentDate,
+            a.start_time AS startTime,
+            a.end_time AS endTime,
+            a.status AS status,
+            d.consultation_fee AS consultationFee
+        FROM appointments a
+        JOIN patients p ON p.id = a.patient_id
+        JOIN users pu ON pu.id = p.user_id
+        JOIN doctors d ON d.id = a.doctor_id
+        JOIN users du ON du.id = d.user_id
+        LEFT JOIN specializations s ON s.id = d.specialization_id
+        WHERE a.appointment_date BETWEEN #{startDate} AND #{endDate}
+        <include refid="reportingRoleScope">
+            <property name="doctorColumn" value="a.doctor_id"/>
+            <property name="patientColumn" value="a.patient_id"/>
+        </include>
+        ORDER BY a.appointment_date ASC, a.start_time ASC
+    </select>
+
+    <select id="findPaymentsForReport" resultMap="revenueReportItemMap">
+        SELECT
+            pay.id AS paymentId,
+            a.id AS appointmentId,
+            a.code AS appointmentCode,
+            p.id AS patientId,
+            pu.name AS patientName,
+            d.id AS doctorId,
+            du.name AS doctorName,
+            pay.amount AS amount,
+            pay.status AS paymentStatus,
+            pay.payment_method AS paymentMethod,
+            pay.created_at AS createdAt
+        FROM payments pay
+        JOIN appointments a ON a.id = pay.appointment_id
+        JOIN patients p ON p.id = pay.patient_id
+        JOIN users pu ON pu.id = p.user_id
+        JOIN doctors d ON d.id = a.doctor_id
+        JOIN users du ON du.id = d.user_id
+        WHERE pay.created_at BETWEEN #{startDateTime} AND #{endDateTime}
+        <include refid="reportingRoleScope">
+            <property name="doctorColumn" value="a.doctor_id"/>
+            <property name="patientColumn" value="pay.patient_id"/>
+        </include>
+        ORDER BY pay.created_at DESC
+    </select>
+
+    <select id="findRevenueByPatientForReport" resultMap="revenueByPatientMap">
+        SELECT
+            p.id AS patientId,
+            pu.name AS patientName,
+            COALESCE(SUM(pay.amount), 0) AS totalRevenue,
+            COUNT(pay.id) AS paymentCount,
+            COALESCE(AVG(pay.amount), 0) AS averageRevenue
+        FROM payments pay
+        JOIN appointments a ON a.id = pay.appointment_id
+        JOIN patients p ON p.id = pay.patient_id
+        JOIN users pu ON pu.id = p.user_id
+        WHERE pay.status = 'COMPLETED'
+          AND pay.created_at BETWEEN #{startDateTime} AND #{endDateTime}
+        <include refid="reportingRoleScope">
+            <property name="doctorColumn" value="a.doctor_id"/>
+            <property name="patientColumn" value="pay.patient_id"/>
+        </include>
+        GROUP BY p.id, pu.name
+        ORDER BY totalRevenue DESC, pu.name ASC
+    </select>
+
+    <select id="findRevenueByDoctorForReport" resultMap="revenueByDoctorMap">
+        SELECT
+            d.id AS doctorId,
+            du.name AS doctorName,
+            COALESCE(SUM(pay.amount), 0) AS totalRevenue,
+            COUNT(pay.id) AS paymentCount,
+            COALESCE(AVG(pay.amount), 0) AS averageRevenue
+        FROM payments pay
+        JOIN appointments a ON a.id = pay.appointment_id
+        JOIN doctors d ON d.id = a.doctor_id
+        JOIN users du ON du.id = d.user_id
+        WHERE pay.status = 'COMPLETED'
+          AND pay.created_at BETWEEN #{startDateTime} AND #{endDateTime}
+        <include refid="reportingRoleScope">
+            <property name="doctorColumn" value="a.doctor_id"/>
+            <property name="patientColumn" value="pay.patient_id"/>
+        </include>
+        GROUP BY d.id, du.name
+        ORDER BY totalRevenue DESC, du.name ASC
+    </select>
+
+</mapper>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "../mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.auth.mapper.UserMapper">
+
+    <resultMap id="userMap" type="com.healthcare.entity.User">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="mobileNumber" column="mobile_number"/>
+        <result property="email" column="email"/>
+        <result property="role" column="role"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="userMap">
+        SELECT id, name, mobile_number, email, role, is_active, created_at, updated_at
+        FROM users
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByMobileNumber" resultMap="userMap">
+        SELECT id, name, mobile_number, email, role, is_active, created_at, updated_at
+        FROM users
+        WHERE mobile_number = #{mobileNumber}
+    </select>
+
+    <select id="existsByMobileNumber" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM users
+        WHERE mobile_number = #{mobileNumber}
+    </select>
+
+    <select id="existsByEmail" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM users
+        WHERE email = #{email}
+    </select>
+
+    <select id="findByRole" resultMap="userMap">
+        SELECT id, name, mobile_number, email, role, is_active, created_at, updated_at
+        FROM users
+        WHERE role = #{role}
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <select id="findByIsActiveTrue" resultMap="userMap">
+        SELECT id, name, mobile_number, email, role, is_active, created_at, updated_at
+        FROM users
+        WHERE is_active = TRUE
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <select id="findAll" resultMap="userMap">
+        SELECT id, name, mobile_number, email, role, is_active, created_at, updated_at
+        FROM users
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <insert id="insertUser" parameterType="com.healthcare.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (
+            name,
+            mobile_number,
+            email,
+            role,
+            is_active,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{name},
+            #{mobileNumber},
+            #{email},
+            #{role},
+            #{isActive},
+            NOW(6),
+            NOW(6)
+        )
+    </insert>
+
+    <update id="updateUser" parameterType="com.healthcare.entity.User">
+        UPDATE users
+        SET name = #{name},
+            mobile_number = #{mobileNumber},
+            email = #{email},
+            role = #{role},
+            is_active = #{isActive},
+            updated_at = NOW(6)
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM users
+        WHERE id = #{id}
+    </delete>
+ 
+</mapper>

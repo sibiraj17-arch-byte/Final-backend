@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "../mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.availability.mapper.AvailabilitySlotMapper">
+
+    <resultMap id="doctorStubMap" type="com.healthcare.entity.Doctor">
+        <id property="id" column="d_id"/>
+    </resultMap>
+
+    <resultMap id="availabilitySlotMap" type="com.healthcare.entity.AvailabilitySlot">
+        <id property="id" column="s_id"/>
+        <result property="slotDate" column="s_slot_date"/>
+        <result property="startTime" column="s_start_time"/>
+        <result property="endTime" column="s_end_time"/>
+        <result property="isAvailable" column="s_is_available"/>
+        <result property="createdAt" column="s_created_at"/>
+        <association property="doctor" resultMap="doctorStubMap"/>
+    </resultMap>
+
+    <sql id="slotSelectColumns">
+        s.id AS s_id,
+        s.slot_date AS s_slot_date,
+        s.start_time AS s_start_time,
+        s.end_time AS s_end_time,
+        s.is_available AS s_is_available,
+        s.created_at AS s_created_at,
+        d.id AS d_id
+    </sql>
+
+    <sql id="slotBaseFrom">
+        FROM availability_slots s
+        JOIN doctors d ON d.id = s.doctor_id
+    </sql>
+
+    <select id="findById" resultMap="availabilitySlotMap">
+        SELECT <include refid="slotSelectColumns"/>
+        <include refid="slotBaseFrom"/>
+        WHERE s.id = #{id}
+    </select>
+
+    <select id="findByDoctorIdAndSlotDate" resultMap="availabilitySlotMap">
+        SELECT <include refid="slotSelectColumns"/>
+        <include refid="slotBaseFrom"/>
+        WHERE s.doctor_id = #{doctorId}
+          AND s.slot_date = #{date}
+        ORDER BY s.start_time ASC
+    </select>
+
+    <select id="findByDoctorIdAndSlotDateAndIsAvailableTrue" resultMap="availabilitySlotMap">
+        SELECT <include refid="slotSelectColumns"/>
+        <include refid="slotBaseFrom"/>
+        WHERE s.doctor_id = #{doctorId}
+          AND s.slot_date = #{date}
+          AND s.is_available = TRUE
+        ORDER BY s.start_time ASC
+    </select>
+
+    <select id="findByDoctorIdAndSlotDateAndStartTimeAndIsAvailableTrue" resultMap="availabilitySlotMap">
+        SELECT <include refid="slotSelectColumns"/>
+        <include refid="slotBaseFrom"/>
+        WHERE s.doctor_id = #{doctorId}
+          AND s.slot_date = #{date}
+          AND s.start_time = #{startTime}
+          AND s.is_available = TRUE
+    </select>
+
+    <select id="findByDoctorIdAndSlotDateAndStartTime" resultMap="availabilitySlotMap">
+        SELECT <include refid="slotSelectColumns"/>
+        <include refid="slotBaseFrom"/>
+        WHERE s.doctor_id = #{doctorId}
+          AND s.slot_date = #{date}
+          AND s.start_time = #{startTime}
+    </select>
+
+    <select id="existsByDoctorIdAndSlotDateAndStartTime" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM availability_slots
+        WHERE doctor_id = #{doctorId}
+          AND slot_date = #{date}
+          AND start_time = #{startTime}
+    </select>
+
+    <select id="findByDoctorIdAndSlotDateBetweenOrderBySlotDateAscStartTimeAsc" resultMap="availabilitySlotMap">
+        SELECT <include refid="slotSelectColumns"/>
+        <include refid="slotBaseFrom"/>
+        WHERE s.doctor_id = #{doctorId}
+          AND s.slot_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY s.slot_date ASC, s.start_time ASC
+    </select>
+
+    <insert id="insertAvailabilitySlot" parameterType="com.healthcare.entity.AvailabilitySlot" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO availability_slots (
+            doctor_id,
+            slot_date,
+            start_time,
+            end_time,
+            is_available,
+            created_at
+        ) VALUES (
+            #{doctor.id},
+            #{slotDate},
+            #{startTime},
+            #{endTime},
+            #{isAvailable},
+            NOW(6)
+        )
+    </insert>
+
+    <update id="updateAvailabilitySlot" parameterType="com.healthcare.entity.AvailabilitySlot">
+        UPDATE availability_slots
+        SET doctor_id = #{doctor.id},
+            slot_date = #{slotDate},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            is_available = #{isAvailable}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByDoctorIdAndSlotDateAndIsAvailableTrue">
+        DELETE FROM availability_slots
+        WHERE doctor_id = #{doctorId}
+          AND slot_date = #{date}
+          AND is_available = TRUE
+    </delete>
+
+</mapper>

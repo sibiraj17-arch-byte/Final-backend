@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "../mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.prescriptions.mapper.PrescriptionQueryMapper">
+
+    <resultMap id="userMap" type="com.healthcare.entity.User">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="mobileNumber" column="mobile_number"/>
+        <result property="email" column="email"/>
+        <result property="role" column="role"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="patientMap" type="com.healthcare.entity.Patient">
+        <id property="id" column="p_id"/>
+        <association property="user" javaType="com.healthcare.entity.User" columnPrefix="pu_"
+                     resultMap="userMap"/>
+    </resultMap>
+
+    <resultMap id="doctorMap" type="com.healthcare.entity.Doctor">
+        <id property="id" column="d_id"/>
+        <association property="user" javaType="com.healthcare.entity.User" columnPrefix="du_"
+                     resultMap="userMap"/>
+    </resultMap>
+
+    <resultMap id="appointmentMap" type="com.healthcare.entity.Appointment">
+        <id property="id" column="a_id"/>
+        <result property="code" column="a_code"/>
+        <result property="appointmentDate" column="a_appointment_date"/>
+        <result property="startTime" column="a_start_time"/>
+        <result property="endTime" column="a_end_time"/>
+        <result property="status" column="a_status"/>
+    </resultMap>
+
+    <resultMap id="prescriptionItemMap" type="com.healthcare.entity.PrescriptionItem">
+        <id property="id" column="pi_id"/>
+        <result property="medicineName" column="pi_medicine_name"/>
+        <result property="dosage" column="pi_dosage"/>
+        <result property="frequency" column="pi_frequency"/>
+        <result property="duration" column="pi_duration"/>
+        <result property="notes" column="pi_notes"/>
+    </resultMap>
+
+    <resultMap id="prescriptionMap" type="com.healthcare.entity.Prescription">
+        <id property="id" column="pr_id"/>
+        <result property="diagnosis" column="pr_diagnosis"/>
+        <result property="instructions" column="pr_instructions"/>
+        <result property="followUp" column="pr_follow_up"/>
+        <result property="createdAt" column="pr_created_at"/>
+        <result property="updatedAt" column="pr_updated_at"/>
+        <association property="patient" javaType="com.healthcare.entity.Patient" resultMap="patientMap"/>
+        <association property="doctor" javaType="com.healthcare.entity.Doctor" resultMap="doctorMap"/>
+        <association property="appointment" javaType="com.healthcare.entity.Appointment" resultMap="appointmentMap"/>
+        <collection property="items" ofType="com.healthcare.entity.PrescriptionItem" resultMap="prescriptionItemMap"/>
+    </resultMap>
+
+    <sql id="prescriptionSelectColumns">
+        pr.id AS pr_id,
+        pr.diagnosis AS pr_diagnosis,
+        pr.instructions AS pr_instructions,
+        pr.follow_up AS pr_follow_up,
+        pr.created_at AS pr_created_at,
+        pr.updated_at AS pr_updated_at,
+        p.id AS p_id,
+        pu.id AS pu_id,
+        pu.name AS pu_name,
+        pu.mobile_number AS pu_mobile_number,
+        pu.email AS pu_email,
+        pu.role AS pu_role,
+        pu.is_active AS pu_is_active,
+        pu.created_at AS pu_created_at,
+        pu.updated_at AS pu_updated_at,
+        d.id AS d_id,
+        du.id AS du_id,
+        du.name AS du_name,
+        du.mobile_number AS du_mobile_number,
+        du.email AS du_email,
+        du.role AS du_role,
+        du.is_active AS du_is_active,
+        du.created_at AS du_created_at,
+        du.updated_at AS du_updated_at,
+        a.id AS a_id,
+        a.code AS a_code,
+        a.appointment_date AS a_appointment_date,
+        a.start_time AS a_start_time,
+        a.end_time AS a_end_time,
+        a.status AS a_status,
+        pi.id AS pi_id,
+        pi.medicine_name AS pi_medicine_name,
+        pi.dosage AS pi_dosage,
+        pi.frequency AS pi_frequency,
+        pi.duration AS pi_duration,
+        pi.notes AS pi_notes
+    </sql>
+
+    <sql id="prescriptionBaseFrom">
+        FROM prescriptions pr
+        JOIN patients p ON p.id = pr.patient_id
+        JOIN users pu ON pu.id = p.user_id
+        JOIN doctors d ON d.id = pr.doctor_id
+        JOIN users du ON du.id = d.user_id
+        LEFT JOIN appointments a ON a.id = pr.appointment_id
+        LEFT JOIN prescription_items pi ON pi.prescription_id = pr.id
+    </sql>
+
+    <select id="findById" resultMap="prescriptionMap">
+        SELECT <include refid="prescriptionSelectColumns"/>
+        <include refid="prescriptionBaseFrom"/>
+        WHERE pr.id = #{id}
+        ORDER BY pi.id ASC
+    </select>
+
+    <select id="findByAppointmentId" resultMap="prescriptionMap">
+        SELECT <include refid="prescriptionSelectColumns"/>
+        <include refid="prescriptionBaseFrom"/>
+        WHERE pr.appointment_id = #{appointmentId}
+        ORDER BY pi.id ASC
+    </select>
+
+    <select id="findByPatientId" resultMap="prescriptionMap">
+        SELECT <include refid="prescriptionSelectColumns"/>
+        <include refid="prescriptionBaseFrom"/>
+        WHERE pr.patient_id = #{patientId}
+        ORDER BY pr.created_at DESC, pi.id ASC
+    </select>
+
+    <select id="findByDoctorId" resultMap="prescriptionMap">
+        SELECT <include refid="prescriptionSelectColumns"/>
+        <include refid="prescriptionBaseFrom"/>
+        WHERE pr.doctor_id = #{doctorId}
+        ORDER BY pr.created_at DESC, pi.id ASC
+    </select>
+
+    <select id="findAll" resultMap="prescriptionMap">
+        SELECT <include refid="prescriptionSelectColumns"/>
+        <include refid="prescriptionBaseFrom"/>
+        ORDER BY pr.created_at DESC, pi.id ASC
+    </select>
+
+    <insert id="insertPrescription" parameterType="com.healthcare.entity.Prescription" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO prescriptions (
+            patient_id,
+            doctor_id,
+            appointment_id,
+            diagnosis,
+            instructions,
+            follow_up,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{patient.id},
+            #{doctor.id},
+            #{appointment.id},
+            #{diagnosis},
+            #{instructions},
+            #{followUp},
+            NOW(6),
+            NOW(6)
+        )
+    </insert>
+
+    <update id="updatePrescription" parameterType="com.healthcare.entity.Prescription">
+        UPDATE prescriptions
+        SET patient_id = #{patient.id},
+            doctor_id = #{doctor.id},
+            appointment_id = #{appointment.id},
+            diagnosis = #{diagnosis},
+            instructions = #{instructions},
+            follow_up = #{followUp},
+            updated_at = NOW(6)
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteItemsByPrescriptionId">
+        DELETE FROM prescription_items
+        WHERE prescription_id = #{prescriptionId}
+    </delete>
+
+    <insert id="insertPrescriptionItem" useGeneratedKeys="true" keyProperty="item.id">
+        INSERT INTO prescription_items (
+            prescription_id,
+            medicine_name,
+            dosage,
+            frequency,
+            duration,
+            notes
+        ) VALUES (
+            #{prescriptionId},
+            #{item.medicineName},
+            #{item.dosage},
+            #{item.frequency},
+            #{item.duration},
+            #{item.notes}
+        )
+    </insert>
+
+</mapper>

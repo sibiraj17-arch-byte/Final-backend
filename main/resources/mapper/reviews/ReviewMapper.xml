@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "../mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.reviews.mapper.ReviewMapper">
+
+    <resultMap id="userMap" type="com.healthcare.entity.User">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="mobileNumber" column="mobile_number"/>
+        <result property="email" column="email"/>
+        <result property="role" column="role"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="patientMap" type="com.healthcare.entity.Patient">
+        <id property="id" column="p_id"/>
+        <association property="user" javaType="com.healthcare.entity.User" columnPrefix="pu_" resultMap="userMap"/>
+    </resultMap>
+
+    <resultMap id="doctorMap" type="com.healthcare.entity.Doctor">
+        <id property="id" column="d_id"/>
+        <association property="user" javaType="com.healthcare.entity.User" columnPrefix="du_" resultMap="userMap"/>
+    </resultMap>
+
+    <resultMap id="appointmentStubMap" type="com.healthcare.entity.Appointment">
+        <id property="id" column="a_id"/>
+        <result property="code" column="a_code"/>
+    </resultMap>
+
+    <resultMap id="reviewMap" type="com.healthcare.entity.Review">
+        <id property="id" column="r_id"/>
+        <result property="rating" column="r_rating"/>
+        <result property="comment" column="r_comment"/>
+        <result property="createdAt" column="r_created_at"/>
+        <result property="updatedAt" column="r_updated_at"/>
+        <association property="patient" resultMap="patientMap"/>
+        <association property="doctor" resultMap="doctorMap"/>
+        <association property="appointment" resultMap="appointmentStubMap"/>
+    </resultMap>
+
+    <resultMap id="ratingStatsMap" type="com.healthcare.feature.reviews.dto.RatingStatsDTO">
+        <result property="averageRating" column="averageRating"/>
+        <result property="totalReviews" column="totalReviews"/>
+        <result property="fiveStar" column="fiveStar"/>
+        <result property="fourStar" column="fourStar"/>
+        <result property="threeStar" column="threeStar"/>
+        <result property="twoStar" column="twoStar"/>
+        <result property="oneStar" column="oneStar"/>
+    </resultMap>
+
+    <sql id="reviewSelectColumns">
+        r.id AS r_id,
+        r.rating AS r_rating,
+        r.comment AS r_comment,
+        r.created_at AS r_created_at,
+        r.updated_at AS r_updated_at,
+        p.id AS p_id,
+        pu.id AS pu_id,
+        pu.name AS pu_name,
+        pu.mobile_number AS pu_mobile_number,
+        pu.email AS pu_email,
+        pu.role AS pu_role,
+        pu.is_active AS pu_is_active,
+        pu.created_at AS pu_created_at,
+        pu.updated_at AS pu_updated_at,
+        d.id AS d_id,
+        du.id AS du_id,
+        du.name AS du_name,
+        du.mobile_number AS du_mobile_number,
+        du.email AS du_email,
+        du.role AS du_role,
+        du.is_active AS du_is_active,
+        du.created_at AS du_created_at,
+        du.updated_at AS du_updated_at,
+        a.id AS a_id,
+        a.code AS a_code
+    </sql>
+
+    <sql id="reviewBaseFrom">
+        FROM reviews r
+        JOIN patients p ON p.id = r.patient_id
+        JOIN users pu ON pu.id = p.user_id
+        JOIN doctors d ON d.id = r.doctor_id
+        JOIN users du ON du.id = d.user_id
+        LEFT JOIN appointments a ON a.id = r.appointment_id
+    </sql>
+
+    <select id="findById" resultMap="reviewMap">
+        SELECT <include refid="reviewSelectColumns"/>
+        <include refid="reviewBaseFrom"/>
+        WHERE r.id = #{id}
+    </select>
+
+    <select id="findByAppointmentId" resultMap="reviewMap">
+        SELECT <include refid="reviewSelectColumns"/>
+        <include refid="reviewBaseFrom"/>
+        WHERE r.appointment_id = #{appointmentId}
+    </select>
+
+    <select id="findByDoctorId" resultMap="reviewMap">
+        SELECT <include refid="reviewSelectColumns"/>
+        <include refid="reviewBaseFrom"/>
+        WHERE r.doctor_id = #{doctorId}
+        ORDER BY r.created_at DESC
+    </select>
+
+    <select id="findByPatientId" resultMap="reviewMap">
+        SELECT <include refid="reviewSelectColumns"/>
+        <include refid="reviewBaseFrom"/>
+        WHERE r.patient_id = #{patientId}
+        ORDER BY r.created_at DESC
+    </select>
+
+    <select id="existsByAppointmentId" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM reviews
+        WHERE appointment_id = #{appointmentId}
+    </select>
+
+    <select id="getAverageRating" resultType="java.lang.Double">
+        SELECT AVG(rating)
+        FROM reviews
+        WHERE doctor_id = #{profId}
+    </select>
+
+    <select id="countByDoctorId" resultType="long">
+        SELECT COUNT(*)
+        FROM reviews
+        WHERE doctor_id = #{doctorId}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM reviews
+    </select>
+
+    <select id="getRatingStats" resultMap="ratingStatsMap">
+        SELECT
+            COALESCE(AVG(rating), 0) AS averageRating,
+            COUNT(*) AS totalReviews,
+            COALESCE(SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END), 0) AS fiveStar,
+            COALESCE(SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END), 0) AS fourStar,
+            COALESCE(SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END), 0) AS threeStar,
+            COALESCE(SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END), 0) AS twoStar,
+            COALESCE(SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END), 0) AS oneStar
+        FROM reviews
+        WHERE doctor_id = #{profId}
+    </select>
+
+    <insert id="insertReview" parameterType="com.healthcare.entity.Review" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO reviews (
+            patient_id,
+            doctor_id,
+            appointment_id,
+            rating,
+            comment,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{patient.id},
+            #{doctor.id},
+            #{appointment.id,jdbcType=BIGINT},
+            #{rating},
+            #{comment},
+            NOW(6),
+            NOW(6)
+        )
+    </insert>
+
+    <update id="updateReview" parameterType="com.healthcare.entity.Review">
+        UPDATE reviews
+        SET patient_id = #{patient.id},
+            doctor_id = #{doctor.id},
+            appointment_id = #{appointment.id,jdbcType=BIGINT},
+            rating = #{rating},
+            comment = #{comment},
+            updated_at = NOW(6)
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "../mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.patientHistory.mapper.MedicalDocumentMapper">
+
+    <resultMap id="patientStubMap" type="com.healthcare.entity.Patient">
+        <id property="id" column="p_id"/>
+    </resultMap>
+
+    <resultMap id="medicalHistoryStubMap" type="com.healthcare.entity.MedicalHistory">
+        <id property="id" column="mh_id"/>
+        <association property="patient" resultMap="patientStubMap"/>
+    </resultMap>
+
+    <resultMap id="medicalDocumentMap" type="com.healthcare.entity.MedicalDocument">
+        <id property="id" column="md_id"/>
+        <result property="documentName" column="md_document_name"/>
+        <result property="documentType" column="md_document_type"/>
+        <result property="fileUrl" column="md_file_url"/>
+        <result property="description" column="md_description"/>
+        <result property="createdAt" column="md_created_at"/>
+        <association property="medicalHistory" resultMap="medicalHistoryStubMap"/>
+    </resultMap>
+
+    <sql id="medicalDocumentSelectColumns">
+        md.id AS md_id,
+        md.document_name AS md_document_name,
+        md.document_type AS md_document_type,
+        md.file_url AS md_file_url,
+        md.description AS md_description,
+        md.created_at AS md_created_at,
+        mh.id AS mh_id,
+        p.id AS p_id
+    </sql>
+
+    <sql id="medicalDocumentBaseFrom">
+        FROM medical_documents md
+        JOIN medical_histories mh ON mh.id = md.medical_history_id
+        JOIN patients p ON p.id = mh.patient_id
+    </sql>
+
+    <select id="findById" resultMap="medicalDocumentMap">
+        SELECT <include refid="medicalDocumentSelectColumns"/>
+        <include refid="medicalDocumentBaseFrom"/>
+        WHERE md.id = #{id}
+    </select>
+
+    <select id="findByMedicalHistoryPatientId" resultMap="medicalDocumentMap">
+        SELECT <include refid="medicalDocumentSelectColumns"/>
+        <include refid="medicalDocumentBaseFrom"/>
+        WHERE p.id = #{patientId}
+        ORDER BY md.created_at DESC, md.id DESC
+    </select>
+
+    <select id="findByMedicalHistoryId" resultMap="medicalDocumentMap">
+        SELECT <include refid="medicalDocumentSelectColumns"/>
+        <include refid="medicalDocumentBaseFrom"/>
+        WHERE mh.id = #{medicalHistoryId}
+        ORDER BY md.created_at DESC, md.id DESC
+    </select>
+
+    <insert id="insertMedicalDocument" parameterType="com.healthcare.entity.MedicalDocument" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO medical_documents (
+            medical_history_id,
+            document_name,
+            document_type,
+            file_url,
+            description,
+            created_at
+        ) VALUES (
+            #{medicalHistory.id},
+            #{documentName},
+            #{documentType},
+            #{fileUrl},
+            #{description},
+            NOW(6)
+        )
+    </insert>
+
+    <update id="updateMedicalDocument" parameterType="com.healthcare.entity.MedicalDocument">
+        UPDATE medical_documents
+        SET medical_history_id = #{medicalHistory.id},
+            document_name = #{documentName},
+            document_type = #{documentType},
+            file_url = #{fileUrl},
+            description = #{description}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

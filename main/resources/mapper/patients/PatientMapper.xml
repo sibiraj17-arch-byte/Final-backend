@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "../mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.patients.mapper.PatientMapper">
+
+    <resultMap id="userMap" type="com.healthcare.entity.User">
+        <id property="id" column="u_id"/>
+        <result property="name" column="u_name"/>
+        <result property="mobileNumber" column="u_mobile_number"/>
+        <result property="email" column="u_email"/>
+        <result property="role" column="u_role"/>
+        <result property="isActive" column="u_is_active"/>
+        <result property="createdAt" column="u_created_at"/>
+        <result property="updatedAt" column="u_updated_at"/>
+    </resultMap>
+
+    <resultMap id="patientMap" type="com.healthcare.entity.Patient">
+        <id property="id" column="p_id"/>
+        <result property="gender" column="p_gender"/>
+        <result property="dateOfBirth" column="p_date_of_birth"/>
+        <result property="address" column="p_address"/>
+        <result property="bloodGroup" column="p_blood_group"/>
+        <result property="allergies" column="p_allergies"/>
+        <result property="emergencyContact" column="p_emergency_contact"/>
+        <result property="createdAt" column="p_created_at"/>
+        <result property="updatedAt" column="p_updated_at"/>
+        <association property="user" resultMap="userMap"/>
+    </resultMap>
+
+    <sql id="patientSelectColumns">
+        p.id AS p_id,
+        p.gender AS p_gender,
+        p.date_of_birth AS p_date_of_birth,
+        p.address AS p_address,
+        p.blood_group AS p_blood_group,
+        p.allergies AS p_allergies,
+        p.emergency_contact AS p_emergency_contact,
+        p.created_at AS p_created_at,
+        p.updated_at AS p_updated_at,
+        u.id AS u_id,
+        u.name AS u_name,
+        u.mobile_number AS u_mobile_number,
+        u.email AS u_email,
+        u.role AS u_role,
+        u.is_active AS u_is_active,
+        u.created_at AS u_created_at,
+        u.updated_at AS u_updated_at
+    </sql>
+
+    <sql id="patientBaseFrom">
+        FROM patients p
+        JOIN users u ON u.id = p.user_id
+    </sql>
+
+    <select id="findById" resultMap="patientMap">
+        SELECT <include refid="patientSelectColumns"/>
+        <include refid="patientBaseFrom"/>
+        WHERE p.id = #{id}
+    </select>
+
+    <select id="findByUserId" resultMap="patientMap">
+        SELECT <include refid="patientSelectColumns"/>
+        <include refid="patientBaseFrom"/>
+        WHERE p.user_id = #{userId}
+        ORDER BY p.id ASC
+        LIMIT 1
+    </select>
+
+    <select id="findByUserMobileNumber" resultMap="patientMap">
+        SELECT <include refid="patientSelectColumns"/>
+        <include refid="patientBaseFrom"/>
+        WHERE u.mobile_number = #{mobileNumber}
+        ORDER BY p.id ASC
+        LIMIT 1
+    </select>
+
+    <select id="findAllByUserIdOrderByIdAsc" resultMap="patientMap">
+        SELECT <include refid="patientSelectColumns"/>
+        <include refid="patientBaseFrom"/>
+        WHERE p.user_id = #{userId}
+        ORDER BY p.id ASC
+    </select>
+
+    <select id="findAll" resultMap="patientMap">
+        SELECT <include refid="patientSelectColumns"/>
+        <include refid="patientBaseFrom"/>
+        ORDER BY p.created_at DESC, p.id DESC
+    </select>
+
+    <select id="existsById" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM patients
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insertPatient" parameterType="com.healthcare.entity.Patient" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO patients (
+            user_id,
+            gender,
+            date_of_birth,
+            address,
+            blood_group,
+            allergies,
+            emergency_contact,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{user.id},
+            #{gender},
+            #{dateOfBirth},
+            #{address},
+            #{bloodGroup},
+            #{allergies},
+            #{emergencyContact},
+            NOW(6),
+            NOW(6)
+        )
+    </insert>
+
+    <update id="updatePatient" parameterType="com.healthcare.entity.Patient">
+        UPDATE patients
+        SET user_id = #{user.id},
+            gender = #{gender},
+            date_of_birth = #{dateOfBirth},
+            address = #{address},
+            blood_group = #{bloodGroup},
+            allergies = #{allergies},
+            emergency_contact = #{emergencyContact},
+            updated_at = NOW(6)
+        WHERE id = #{id}
+    </update>
+
+</mapper>

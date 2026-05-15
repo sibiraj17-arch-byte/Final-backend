@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "../mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.patientHistory.mapper.MedicalHistoryMapper">
+
+    <resultMap id="userMap" type="com.healthcare.entity.User">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="mobileNumber" column="mobile_number"/>
+        <result property="email" column="email"/>
+        <result property="role" column="role"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="patientMap" type="com.healthcare.entity.Patient">
+        <id property="id" column="p_id"/>
+        <association property="user" javaType="com.healthcare.entity.User" columnPrefix="pu_"
+                     resultMap="userMap"/>
+    </resultMap>
+
+    <resultMap id="medicalHistoryMap" type="com.healthcare.entity.MedicalHistory">
+        <id property="id" column="mh_id"/>
+        <result property="condition" column="mh_condition_text"/>
+        <result property="diagnosis" column="mh_diagnosis"/>
+        <result property="diagnosisDate" column="mh_diagnosis_date"/>
+        <result property="status" column="mh_status"/>
+        <result property="notes" column="mh_notes"/>
+        <result property="treatment" column="mh_treatment"/>
+        <result property="createdAt" column="mh_created_at"/>
+        <result property="updatedAt" column="mh_updated_at"/>
+        <association property="patient" javaType="com.healthcare.entity.Patient" resultMap="patientMap"/>
+    </resultMap>
+
+    <sql id="medicalHistorySelectColumns">
+        mh.id AS mh_id,
+        mh.condition_text AS mh_condition_text,
+        mh.diagnosis AS mh_diagnosis,
+        mh.diagnosis_date AS mh_diagnosis_date,
+        mh.status AS mh_status,
+        mh.notes AS mh_notes,
+        mh.treatment AS mh_treatment,
+        mh.created_at AS mh_created_at,
+        mh.updated_at AS mh_updated_at,
+        p.id AS p_id,
+        pu.id AS pu_id,
+        pu.name AS pu_name,
+        pu.mobile_number AS pu_mobile_number,
+        pu.email AS pu_email,
+        pu.role AS pu_role,
+        pu.is_active AS pu_is_active,
+        pu.created_at AS pu_created_at,
+        pu.updated_at AS pu_updated_at
+    </sql>
+
+    <sql id="medicalHistoryBaseFrom">
+        FROM medical_histories mh
+        JOIN patients p ON p.id = mh.patient_id
+        JOIN users pu ON pu.id = p.user_id
+    </sql>
+
+    <select id="findById" resultMap="medicalHistoryMap">
+        SELECT <include refid="medicalHistorySelectColumns"/>
+        <include refid="medicalHistoryBaseFrom"/>
+        WHERE mh.id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="medicalHistoryMap">
+        SELECT <include refid="medicalHistorySelectColumns"/>
+        <include refid="medicalHistoryBaseFrom"/>
+        ORDER BY mh.created_at DESC
+    </select>
+
+    <select id="findByPatientId" resultMap="medicalHistoryMap">
+        SELECT <include refid="medicalHistorySelectColumns"/>
+        <include refid="medicalHistoryBaseFrom"/>
+        WHERE mh.patient_id = #{patientId}
+        ORDER BY mh.created_at DESC
+    </select>
+
+    <select id="findByPatientIdAndCreatedAtBetween" resultMap="medicalHistoryMap">
+        SELECT <include refid="medicalHistorySelectColumns"/>
+        <include refid="medicalHistoryBaseFrom"/>
+        WHERE mh.patient_id = #{patientId}
+          AND mh.created_at BETWEEN #{startDate} AND #{endDate}
+        ORDER BY mh.created_at DESC
+    </select>
+
+    <select id="existsByIdAndPatientId" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM medical_histories
+        WHERE id = #{id}
+          AND patient_id = #{patientId}
+    </select>
+
+    <select id="findByPatientIdAndConditionContainingIgnoreCase" resultMap="medicalHistoryMap">
+        SELECT <include refid="medicalHistorySelectColumns"/>
+        <include refid="medicalHistoryBaseFrom"/>
+        WHERE mh.patient_id = #{patientId}
+          AND LOWER(mh.condition_text) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+        ORDER BY mh.created_at DESC
+    </select>
+
+    <insert id="insertMedicalHistory" parameterType="com.healthcare.entity.MedicalHistory" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO medical_histories (
+            patient_id,
+            condition_text,
+            diagnosis,
+            diagnosis_date,
+            status,
+            notes,
+            treatment,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{patient.id},
+            #{condition},
+            #{diagnosis},
+            #{diagnosisDate},
+            #{status},
+            #{notes},
+            #{treatment},
+            NOW(6),
+            NOW(6)
+        )
+    </insert>
+
+    <update id="updateMedicalHistory" parameterType="com.healthcare.entity.MedicalHistory">
+        UPDATE medical_histories
+        SET patient_id = #{patient.id},
+            condition_text = #{condition},
+            diagnosis = #{diagnosis},
+            diagnosis_date = #{diagnosisDate},
+            status = #{status},
+            notes = #{notes},
+            treatment = #{treatment},
+            updated_at = NOW(6)
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM medical_histories
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

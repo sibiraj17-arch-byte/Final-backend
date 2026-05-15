@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "../mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.specializations.mapper.SpecializationMapper">
+
+    <resultMap id="specializationMap" type="com.healthcare.entity.Specialization">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="specializationMap">
+        SELECT id, name, description, created_at, updated_at
+        FROM specializations
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByName" resultMap="specializationMap">
+        SELECT id, name, description, created_at, updated_at
+        FROM specializations
+        WHERE name = #{name}
+    </select>
+
+    <select id="existsByName" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM specializations
+        WHERE name = #{name}
+    </select>
+
+    <select id="findAll" resultMap="specializationMap">
+        SELECT id, name, description, created_at, updated_at
+        FROM specializations
+        ORDER BY name ASC, id ASC
+    </select>
+
+    <insert id="insertSpecialization" parameterType="com.healthcare.entity.Specialization" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO specializations (
+            name,
+            description,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{name},
+            #{description},
+            NOW(6),
+            NOW(6)
+        )
+    </insert>
+
+    <update id="updateSpecialization" parameterType="com.healthcare.entity.Specialization">
+        UPDATE specializations
+        SET name = #{name},
+            description = #{description},
+            updated_at = NOW(6)
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM specializations
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

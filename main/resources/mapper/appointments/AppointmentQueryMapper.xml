@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "../mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.appointments.mapper.AppointmentQueryMapper">
+
+    <resultMap id="userMap" type="com.healthcare.entity.User">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="mobileNumber" column="mobile_number"/>
+        <result property="email" column="email"/>
+        <result property="role" column="role"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="specializationMap" type="com.healthcare.entity.Specialization">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="patientMap" type="com.healthcare.entity.Patient">
+        <id property="id" column="p_id"/>
+        <result property="gender" column="p_gender"/>
+        <result property="dateOfBirth" column="p_date_of_birth"/>
+        <result property="address" column="p_address"/>
+        <result property="bloodGroup" column="p_blood_group"/>
+        <result property="allergies" column="p_allergies"/>
+        <result property="emergencyContact" column="p_emergency_contact"/>
+        <result property="createdAt" column="p_created_at"/>
+        <result property="updatedAt" column="p_updated_at"/>
+        <association property="user" javaType="com.healthcare.entity.User" columnPrefix="pu_"
+                     resultMap="userMap"/>
+    </resultMap>
+
+    <resultMap id="doctorMap" type="com.healthcare.entity.Doctor">
+        <id property="id" column="d_id"/>
+        <result property="qualification" column="d_qualification"/>
+        <result property="experience" column="d_experience"/>
+        <result property="bio" column="d_bio"/>
+        <result property="availabilityStatus" column="d_availability_status"/>
+        <result property="experienceYears" column="d_experience_years"/>
+        <result property="consultationFee" column="d_consultation_fee"/>
+        <result property="isVerified" column="d_is_verified"/>
+        <result property="totalExperience" column="d_total_experience"/>
+        <result property="createdAt" column="d_created_at"/>
+        <result property="updatedAt" column="d_updated_at"/>
+        <association property="user" javaType="com.healthcare.entity.User" columnPrefix="du_"
+                     resultMap="userMap"/>
+        <association property="specialization" javaType="com.healthcare.entity.Specialization" columnPrefix="s_"
+                     resultMap="specializationMap"/>
+    </resultMap>
+
+    <resultMap id="paymentMap" type="com.healthcare.entity.Payment">
+        <id property="id" column="pay_id"/>
+        <result property="amount" column="pay_amount"/>
+        <result property="status" column="pay_status"/>
+        <result property="transactionId" column="pay_transaction_id"/>
+        <result property="paymentMethod" column="pay_payment_method"/>
+        <result property="razorpayOrderId" column="pay_razorpay_order_id"/>
+        <result property="razorpayPaymentId" column="pay_razorpay_payment_id"/>
+        <result property="razorpaySignature" column="pay_razorpay_signature"/>
+        <result property="createdAt" column="pay_created_at"/>
+        <result property="updatedAt" column="pay_updated_at"/>
+    </resultMap>
+
+    <resultMap id="reviewMap" type="com.healthcare.entity.Review">
+        <id property="id" column="rev_id"/>
+        <result property="rating" column="rev_rating"/>
+        <result property="comment" column="rev_comment"/>
+        <result property="createdAt" column="rev_created_at"/>
+        <result property="updatedAt" column="rev_updated_at"/>
+    </resultMap>
+
+    <resultMap id="prescriptionStubMap" type="com.healthcare.entity.Prescription">
+        <id property="id" column="pr_id"/>
+        <result property="diagnosis" column="pr_diagnosis"/>
+        <result property="instructions" column="pr_instructions"/>
+        <result property="followUp" column="pr_follow_up"/>
+        <result property="createdAt" column="pr_created_at"/>
+        <result property="updatedAt" column="pr_updated_at"/>
+    </resultMap>
+
+    <resultMap id="appointmentMap" type="com.healthcare.entity.Appointment">
+        <id property="id" column="a_id"/>
+        <result property="code" column="a_code"/>
+        <result property="appointmentDate" column="a_appointment_date"/>
+        <result property="startTime" column="a_start_time"/>
+        <result property="endTime" column="a_end_time"/>
+        <result property="status" column="a_status"/>
+        <result property="reason" column="a_reason"/>
+        <result property="notes" column="a_notes"/>
+        <result property="symptoms" column="a_symptoms"/>
+        <result property="createdAt" column="a_created_at"/>
+        <result property="updatedAt" column="a_updated_at"/>
+        <association property="patient" javaType="com.healthcare.entity.Patient" resultMap="patientMap"/>
+        <association property="doctor" javaType="com.healthcare.entity.Doctor" resultMap="doctorMap"/>
+        <association property="payment" javaType="com.healthcare.entity.Payment" resultMap="paymentMap"/>
+        <association property="review" javaType="com.healthcare.entity.Review" resultMap="reviewMap"/>
+        <association property="prescription" javaType="com.healthcare.entity.Prescription"
+                     resultMap="prescriptionStubMap"/>
+    </resultMap>
+
+    <sql id="appointmentSelectColumns">
+        a.id AS a_id,
+        a.code AS a_code,
+        a.appointment_date AS a_appointment_date,
+        a.start_time AS a_start_time,
+        a.end_time AS a_end_time,
+        a.status AS a_status,
+        a.reason AS a_reason,
+        a.notes AS a_notes,
+        a.symptoms AS a_symptoms,
+        a.created_at AS a_created_at,
+        a.updated_at AS a_updated_at,
+        p.id AS p_id,
+        p.gender AS p_gender,
+        p.date_of_birth AS p_date_of_birth,
+        p.address AS p_address,
+        p.blood_group AS p_blood_group,
+        p.allergies AS p_allergies,
+        p.emergency_contact AS p_emergency_contact,
+        p.created_at AS p_created_at,
+        p.updated_at AS p_updated_at,
+        pu.id AS pu_id,
+        pu.name AS pu_name,
+        pu.mobile_number AS pu_mobile_number,
+        pu.email AS pu_email,
+        pu.role AS pu_role,
+        pu.is_active AS pu_is_active,
+        pu.created_at AS pu_created_at,
+        pu.updated_at AS pu_updated_at,
+        d.id AS d_id,
+        d.qualification AS d_qualification,
+        d.experience AS d_experience,
+        d.bio AS d_bio,
+        d.availability_status AS d_availability_status,
+        d.experience_years AS d_experience_years,
+        d.consultation_fee AS d_consultation_fee,
+        d.is_verified AS d_is_verified,
+        d.total_experience AS d_total_experience,
+        d.created_at AS d_created_at,
+        d.updated_at AS d_updated_at,
+        du.id AS du_id,
+        du.name AS du_name,
+        du.mobile_number AS du_mobile_number,
+        du.email AS du_email,
+        du.role AS du_role,
+        du.is_active AS du_is_active,
+        du.created_at AS du_created_at,
+        du.updated_at AS du_updated_at,
+        s.id AS s_id,
+        s.name AS s_name,
+        s.description AS s_description,
+        s.created_at AS s_created_at,
+        s.updated_at AS s_updated_at,
+        pay.id AS pay_id,
+        pay.amount AS pay_amount,
+        pay.status AS pay_status,
+        pay.transaction_id AS pay_transaction_id,
+        pay.payment_method AS pay_payment_method,
+        pay.razorpay_order_id AS pay_razorpay_order_id,
+        pay.razorpay_payment_id AS pay_razorpay_payment_id,
+        pay.razorpay_signature AS pay_razorpay_signature,
+        pay.created_at AS pay_created_at,
+        pay.updated_at AS pay_updated_at,
+        rev.id AS rev_id,
+        rev.rating AS rev_rating,
+        rev.comment AS rev_comment,
+        rev.created_at AS rev_created_at,
+        rev.updated_at AS rev_updated_at,
+        pr.id AS pr_id,
+        pr.diagnosis AS pr_diagnosis,
+        pr.instructions AS pr_instructions,
+        pr.follow_up AS pr_follow_up,
+        pr.created_at AS pr_created_at,
+        pr.updated_at AS pr_updated_at
+    </sql>
+
+    <sql id="appointmentBaseFrom">
+        FROM appointments a
+        JOIN patients p ON p.id = a.patient_id
+        JOIN users pu ON pu.id = p.user_id
+        JOIN doctors d ON d.id = a.doctor_id
+        JOIN users du ON du.id = d.user_id
+        LEFT JOIN specializations s ON s.id = d.specialization_id
+        LEFT JOIN payments pay ON pay.appointment_id = a.id
+        LEFT JOIN reviews rev ON rev.appointment_id = a.id
+        LEFT JOIN prescriptions pr ON pr.appointment_id = a.id
+    </sql>
+
+    <select id="findById" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.id = #{id}
+    </select>
+
+    <select id="findByCode" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.code = #{code}
+    </select>
+
+    <select id="findAll" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        ORDER BY a.appointment_date DESC, a.start_time DESC
+    </select>
+
+    <select id="findByPatientId" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.patient_id = #{patientId}
+        ORDER BY a.appointment_date DESC, a.start_time DESC
+    </select>
+
+    <select id="findByDoctorId" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.doctor_id = #{doctorId}
+        ORDER BY a.appointment_date DESC, a.start_time DESC
+    </select>
+
+    <select id="findByPatientIdAndStatus" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.patient_id = #{patientId}
+          AND a.status = #{status}
+        ORDER BY a.appointment_date DESC, a.start_time DESC
+    </select>
+
+    <select id="findByDoctorIdAndStatus" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.doctor_id = #{doctorId}
+          AND a.status = #{status}
+        ORDER BY a.appointment_date DESC, a.start_time DESC
+    </select>
+
+    <select id="findByPatientIdAndAppointmentDateGreaterThanEqualOrderByAppointmentDateAscStartTimeAsc"
+            resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.patient_id = #{patientId}
+          AND a.appointment_date <![CDATA[ >= ]]> #{today}
+        ORDER BY a.appointment_date ASC, a.start_time ASC
+    </select>
+
+    <select id="findByDoctorIdAndAppointmentDateGreaterThanEqualOrderByAppointmentDateAscStartTimeAsc"
+            resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.doctor_id = #{doctorId}
+          AND a.appointment_date <![CDATA[ >= ]]> #{today}
+        ORDER BY a.appointment_date ASC, a.start_time ASC
+    </select>
+
+    <select id="findByDoctorIdAndAppointmentDate" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.doctor_id = #{doctorId}
+          AND a.appointment_date = #{date}
+        ORDER BY a.start_time ASC
+    </select>
+
+    <select id="findByAppointmentDateBetweenOrderByAppointmentDateAscStartTimeAsc" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.appointment_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY a.appointment_date ASC, a.start_time ASC
+    </select>
+
+    <select id="findByDoctorIdAndAppointmentDateBetweenOrderByAppointmentDateAscStartTimeAsc"
+            resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.doctor_id = #{doctorId}
+          AND a.appointment_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY a.appointment_date ASC, a.start_time ASC
+    </select>
+
+    <select id="findByDoctorIdAndAppointmentDateOrderByStartTimeAsc" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.doctor_id = #{doctorId}
+          AND a.appointment_date = #{today}
+        ORDER BY a.start_time ASC
+    </select>
+
+    <select id="findByAppointmentDateBetween" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.appointment_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY a.appointment_date ASC, a.start_time ASC
+    </select>
+
+    <select id="findByPatientIdAndAppointmentDateBetween" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.patient_id = #{patientId}
+          AND a.appointment_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY a.appointment_date ASC, a.start_time ASC
+    </select>
+
+    <select id="findByDoctorIdAndAppointmentDateBetween" resultMap="appointmentMap">
+        SELECT <include refid="appointmentSelectColumns"/>
+        <include refid="appointmentBaseFrom"/>
+        WHERE a.doctor_id = #{doctorId}
+          AND a.appointment_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY a.appointment_date ASC, a.start_time ASC
+    </select>
+
+    <select id="existsByDoctorIdAndAppointmentDateAndStartTimeAndStatusNot" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM appointments
+        WHERE doctor_id = #{doctorId}
+          AND appointment_date = #{date}
+          AND start_time = #{startTime}
+          AND status != #{status}
+    </select>
+
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*)
+        FROM appointments
+        WHERE status = #{status}
+    </select>
+
+    <select id="countByAppointmentDate" resultType="long">
+        SELECT COUNT(*)
+        FROM appointments
+        WHERE appointment_date = #{today}
+    </select>
+
+    <insert id="insertAppointment" parameterType="com.healthcare.entity.Appointment" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO appointments (
+            code,
+            patient_id,
+            doctor_id,
+            appointment_date,
+            start_time,
+            end_time,
+            status,
+            reason,
+            notes,
+            symptoms,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{code},
+            #{patient.id},
+            #{doctor.id},
+            #{appointmentDate},
+            #{startTime},
+            #{endTime},
+            #{status},
+            #{reason},
+            #{notes},
+            #{symptoms},
+            NOW(6),
+            NOW(6)
+        )
+    </insert>
+
+    <update id="updateAppointment" parameterType="com.healthcare.entity.Appointment">
+        UPDATE appointments
+        SET patient_id = #{patient.id},
+            doctor_id = #{doctor.id},
+            appointment_date = #{appointmentDate},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            status = #{status},
+            reason = #{reason},
+            notes = #{notes},
+            symptoms = #{symptoms},
+            updated_at = NOW(6)
+        WHERE id = #{id}
+    </update>
+
+</mapper>

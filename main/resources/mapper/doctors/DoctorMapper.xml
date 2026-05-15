@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "../mybatis-3-mapper.dtd">
+<mapper namespace="com.healthcare.feature.doctors.mapper.DoctorMapper">
+
+    <resultMap id="userMap" type="com.healthcare.entity.User">
+        <id property="id" column="u_id"/>
+        <result property="name" column="u_name"/>
+        <result property="mobileNumber" column="u_mobile_number"/>
+        <result property="email" column="u_email"/>
+        <result property="role" column="u_role"/>
+        <result property="isActive" column="u_is_active"/>
+        <result property="createdAt" column="u_created_at"/>
+        <result property="updatedAt" column="u_updated_at"/>
+    </resultMap>
+
+    <resultMap id="specializationMap" type="com.healthcare.entity.Specialization">
+        <id property="id" column="s_id"/>
+        <result property="name" column="s_name"/>
+        <result property="description" column="s_description"/>
+        <result property="createdAt" column="s_created_at"/>
+        <result property="updatedAt" column="s_updated_at"/>
+    </resultMap>
+
+    <resultMap id="doctorMap" type="com.healthcare.entity.Doctor">
+        <id property="id" column="d_id"/>
+        <result property="qualification" column="d_qualification"/>
+        <result property="experience" column="d_experience"/>
+        <result property="bio" column="d_bio"/>
+        <result property="availabilityStatus" column="d_availability_status"/>
+        <result property="experienceYears" column="d_experience_years"/>
+        <result property="consultationFee" column="d_consultation_fee"/>
+        <result property="isVerified" column="d_is_verified"/>
+        <result property="totalExperience" column="d_total_experience"/>
+        <result property="createdAt" column="d_created_at"/>
+        <result property="updatedAt" column="d_updated_at"/>
+        <association property="user" resultMap="userMap"/>
+        <association property="specialization" resultMap="specializationMap"/>
+    </resultMap>
+
+    <sql id="doctorSelectColumns">
+        d.id AS d_id,
+        d.qualification AS d_qualification,
+        d.experience AS d_experience,
+        d.bio AS d_bio,
+        d.availability_status AS d_availability_status,
+        d.experience_years AS d_experience_years,
+        d.consultation_fee AS d_consultation_fee,
+        d.is_verified AS d_is_verified,
+        d.total_experience AS d_total_experience,
+        d.created_at AS d_created_at,
+        d.updated_at AS d_updated_at,
+        u.id AS u_id,
+        u.name AS u_name,
+        u.mobile_number AS u_mobile_number,
+        u.email AS u_email,
+        u.role AS u_role,
+        u.is_active AS u_is_active,
+        u.created_at AS u_created_at,
+        u.updated_at AS u_updated_at,
+        s.id AS s_id,
+        s.name AS s_name,
+        s.description AS s_description,
+        s.created_at AS s_created_at,
+        s.updated_at AS s_updated_at
+    </sql>
+
+    <sql id="doctorBaseFrom">
+        FROM doctors d
+        JOIN users u ON u.id = d.user_id
+        LEFT JOIN specializations s ON s.id = d.specialization_id
+    </sql>
+
+    <select id="findById" resultMap="doctorMap">
+        SELECT <include refid="doctorSelectColumns"/>
+        <include refid="doctorBaseFrom"/>
+        WHERE d.id = #{id}
+    </select>
+
+    <select id="findByUserId" resultMap="doctorMap">
+        SELECT <include refid="doctorSelectColumns"/>
+        <include refid="doctorBaseFrom"/>
+        WHERE d.user_id = #{userId}
+    </select>
+
+    <select id="findByUserMobileNumber" resultMap="doctorMap">
+        SELECT <include refid="doctorSelectColumns"/>
+        <include refid="doctorBaseFrom"/>
+        WHERE u.mobile_number = #{mobileNumber}
+    </select>
+
+    <select id="findBySpecializationId" resultMap="doctorMap">
+        SELECT <include refid="doctorSelectColumns"/>
+        <include refid="doctorBaseFrom"/>
+        WHERE d.specialization_id = #{specializationId}
+        ORDER BY u.name ASC
+    </select>
+
+    <select id="findByAvailabilityStatus" resultMap="doctorMap">
+        SELECT <include refid="doctorSelectColumns"/>
+        <include refid="doctorBaseFrom"/>
+        WHERE d.availability_status = #{status}
+        ORDER BY u.name ASC
+    </select>
+
+    <select id="findByIsVerifiedTrue" resultMap="doctorMap">
+        SELECT <include refid="doctorSelectColumns"/>
+        <include refid="doctorBaseFrom"/>
+        WHERE d.is_verified = TRUE
+        ORDER BY u.name ASC
+    </select>
+
+    <select id="findByAvailabilityStatusAndIsVerifiedTrue" resultMap="doctorMap">
+        SELECT <include refid="doctorSelectColumns"/>
+        <include refid="doctorBaseFrom"/>
+        WHERE d.availability_status = #{availabilityStatus}
+          AND d.is_verified = TRUE
+        ORDER BY u.name ASC
+    </select>
+
+    <select id="findByAvailabilityStatusAndIsVerifiedTrueAndSpecializationId" resultMap="doctorMap">
+        SELECT <include refid="doctorSelectColumns"/>
+        <include refid="doctorBaseFrom"/>
+        WHERE d.availability_status = #{availabilityStatus}
+          AND d.is_verified = TRUE
+          AND d.specialization_id = #{specializationId}
+        ORDER BY u.name ASC
+    </select>
+
+    <select id="findByUserNameContainingIgnoreCase" resultMap="doctorMap">
+        SELECT <include refid="doctorSelectColumns"/>
+        <include refid="doctorBaseFrom"/>
+        WHERE LOWER(u.name) LIKE CONCAT('%', LOWER(#{name}), '%')
+        ORDER BY u.name ASC
+    </select>
+
+    <select id="findAll" resultMap="doctorMap">
+        SELECT <include refid="doctorSelectColumns"/>
+        <include refid="doctorBaseFrom"/>
+        ORDER BY d.created_at DESC, d.id DESC
+    </select>
+
+    <select id="existsById" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
+        FROM doctors
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insertDoctor" parameterType="com.healthcare.entity.Doctor" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO doctors (
+            user_id,
+            specialization_id,
+            qualification,
+            experience,
+            bio,
+            availability_status,
+            experience_years,
+            consultation_fee,
+            is_verified,
+            total_experience,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{user.id},
+            #{specialization.id,jdbcType=BIGINT},
+            #{qualification},
+            #{experience},
+            #{bio},
+            #{availabilityStatus},
+            #{experienceYears},
+            #{consultationFee},
+            #{isVerified},
+            #{totalExperience},
+            NOW(6),
+            NOW(6)
+        )
+    </insert>
+
+    <update id="updateDoctor" parameterType="com.healthcare.entity.Doctor">
+        UPDATE doctors
+        SET user_id = #{user.id},
+            specialization_id = #{specialization.id,jdbcType=BIGINT},
+            qualification = #{qualification},
+            experience = #{experience},
+            bio = #{bio},
+            availability_status = #{availabilityStatus},
+            experience_years = #{experienceYears},
+            consultation_fee = #{consultationFee},
+            is_verified = #{isVerified},
+            total_experience = #{totalExperience},
+            updated_at = NOW(6)
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM doctors
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

@@ -1,0 +1,15 @@
+-- Bootstrap-safe Flyway baseline.
+--
+-- This project currently has no schema-creation Flyway migrations and runs with:
+--   spring.jpa.hibernate.ddl-auto=none
+--
+-- On a brand-new database, Flyway executes V1 before any tables exist, so a
+-- cleanup migration cannot safely touch application tables here.
+--
+-- Keep V1 as a no-op baseline so:
+-- 1) startup does not fail on an empty schema
+-- 2) existing databases can still initialize Flyway history cleanly
+--
+-- If orphan-reference cleanup is still needed, add it later as a migration that
+-- runs only after the full schema creation migrations exist.
+SELECT 1;
