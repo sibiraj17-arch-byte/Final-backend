@@ -98,8 +98,6 @@ public class AppointmentService {
         if (conflict) {
             throw new AppointmentConflictException("This time slot is already booked");
         }
-
-        // Only mark slot as unavailable AFTER all validations pass
         slot.setIsAvailable(false);
         slotRepository.save(slot);
 
